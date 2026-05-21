@@ -50,15 +50,23 @@ def _fetch_from_yahoo(tickers: list[str]) -> dict:
         except Exception:
             pass
 
-        # Next earnings dates
+        # Next earnings dates (only future dates)
         try:
+            today = datetime.now().date()
             calendar = t_obj.calendar_events
             for ticker in tickers:
                 cal = calendar.get(ticker)
                 if isinstance(cal, dict):
                     dates = cal.get("earnings", {}).get("earningsDate", [])
-                    if dates:
-                        results[ticker]["next_earnings_date"] = str(dates[0])[:10]
+                    for d in dates:
+                        date_str = str(d)[:10]
+                        try:
+                            from datetime import date as date_type
+                            if date_type.fromisoformat(date_str) >= today:
+                                results[ticker]["next_earnings_date"] = date_str
+                                break
+                        except Exception:
+                            pass
         except Exception:
             pass
 

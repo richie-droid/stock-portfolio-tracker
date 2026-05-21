@@ -115,6 +115,7 @@ def build_option_rows(positions_df: pd.DataFrame, history_df: pd.DataFrame, yaho
             "today_gl_dollar": row.get("Today_GL_Dollar"),
             "today_gl_pct": row.get("Today_GL_Pct"),
             "last_purchase_date": get_last_purchase_date(symbol, acct, purchases),
+            "tax_status": get_tax_status(symbol, acct, purchases),
             "next_earnings_date": ydata.get("next_earnings_date"),
             "earnings_history": ydata.get("earnings_history", []),
         })

@@ -26,6 +26,39 @@
   white-space: nowrap;
 }
 
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  color: var(--text-secondary);
+}
+
+.sortActive {
+  color: var(--accent-blue) !important;
+}
+
+.sortIcon {
+  margin-left: 4px;
+  opacity: 0.7;
+  font-size: 9px;
+}
+
+.tickerLink {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent-blue);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.tickerLink:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
 .table td {
   padding: 9px 12px;
   border-bottom: 1px solid var(--border);
