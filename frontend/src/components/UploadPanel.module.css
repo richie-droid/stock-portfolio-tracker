@@ -1,0 +1,139 @@
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 24px;
+}
+
+.section {
+  flex: 1;
+  padding: 0 16px;
+}
+
+.section:first-child {
+  padding-left: 0;
+}
+
+.section:last-child {
+  padding-right: 0;
+}
+
+.divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  margin: 0 4px;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.statsBadge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-blue);
+  background: var(--accent-blue-dim);
+  padding: 1px 7px;
+  border-radius: 3px;
+  letter-spacing: 0;
+  font-weight: 400;
+  text-transform: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hidden {
+  display: none;
+}
+
+.fileBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s, color 0.15s;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileBtn:hover {
+  border-color: var(--accent-blue-dim);
+  color: var(--text-primary);
+}
+
+.loadBtn {
+  background: var(--accent-blue-dim);
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-blue);
+  padding: 7px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.loadBtn:hover:not(:disabled) {
+  background: #1e3d6e;
+}
+
+.loadBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.exportBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-muted);
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.exportBtn:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
+}
+
+.histMsg {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--green);
+  font-family: var(--font-mono);
+}

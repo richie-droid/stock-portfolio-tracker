@@ -1,0 +1,49 @@
+:root {
+  --bg-primary: #0a0c0f;
+  --bg-secondary: #111418;
+  --bg-card: #151a20;
+  --bg-hover: #1c2228;
+  --border: #1f2830;
+  --border-bright: #2a3540;
+  --text-primary: #e8edf2;
+  --text-secondary: #7a8c9a;
+  --text-muted: #3d4f5c;
+  --accent-blue: #3b9eff;
+  --accent-blue-dim: #1a4a7a;
+  --green: #2ecc71;
+  --green-dim: #1a4a2e;
+  --red: #e74c3c;
+  --red-dim: #4a1a1a;
+  --yellow: #f39c12;
+  --yellow-dim: #4a3000;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+.mono { font-family: var(--font-mono); }
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.neutral { color: var(--text-secondary); }

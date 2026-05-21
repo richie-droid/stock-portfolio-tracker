@@ -1,0 +1,28 @@
+.trend {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dot {
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.beat {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.miss {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.label {
+  display: block;
+}
