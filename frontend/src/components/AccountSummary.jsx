@@ -5,10 +5,12 @@ export default function AccountSummary({ summaries }) {
   if (!summaries?.length) return null
 
   const fields = [
-    { key: 'current_value', label: 'Current Value', sign: false },
-    { key: 'fresh_funds_invested', label: 'Fresh Funds In', sign: false },
-    { key: 'cash_taken_out', label: 'Cash Taken Out', sign: false },
-    { key: 'realized_gains', label: 'Realized Gains', sign: true },
+    { key: 'current_value',       label: 'Current Value',     sign: false },
+    { key: 'unrealized_gl',       label: 'Unrealized G/L',    sign: true  },
+    { key: 'fresh_funds_invested',label: 'Fresh Funds In',    sign: false },
+    { key: 'cash_taken_out',      label: 'Cash Taken Out',    sign: false },
+    { key: 'realized_gains',      label: 'Realized Gains',    sign: true  },
+    { key: 'dividends_received',  label: 'Dividends',         sign: false },
   ]
 
   return (

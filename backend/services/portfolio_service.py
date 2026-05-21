@@ -49,6 +49,23 @@ def build_stock_rows(positions_df: pd.DataFrame, history_df: pd.DataFrame, yahoo
         symbol = str(row["Symbol"]).strip()
         acct = str(row["Account Number"]).strip()
         ydata = yahoo_data.get(symbol, {})
+
+        live_price = ydata.get("current_price")
+        csv_price = row.get("Last Price")
+        current_price = live_price if live_price is not None else csv_price
+
+        qty = row.get("Quantity") or 0
+        cost_basis = row.get("Cost Basis Total") or 0
+
+        if live_price is not None and qty:
+            current_value = round(float(live_price) * float(qty), 2)
+            gl_dollar = round(current_value - float(cost_basis), 2) if cost_basis else None
+            gl_pct = round((gl_dollar / float(cost_basis)) * 100, 4) if cost_basis and gl_dollar is not None else None
+        else:
+            current_value = row.get("Current Value")
+            gl_dollar = row.get("Total_GL_Dollar")
+            gl_pct = row.get("Total_GL_Pct")
+
         rows.append({
             "symbol": symbol,
             "account_number": acct,
@@ -56,10 +73,10 @@ def build_stock_rows(positions_df: pd.DataFrame, history_df: pd.DataFrame, yahoo
             "quantity": row.get("Quantity"),
             "avg_cost": row.get("Average Cost Basis"),
             "cost_basis_total": row.get("Cost Basis Total"),
-            "current_price": row.get("Last Price"),
-            "current_value": row.get("Current Value"),
-            "gl_dollar": row.get("Total_GL_Dollar"),
-            "gl_pct": row.get("Total_GL_Pct"),
+            "current_price": current_price,
+            "current_value": current_value,
+            "gl_dollar": gl_dollar,
+            "gl_pct": gl_pct,
             "today_gl_dollar": row.get("Today_GL_Dollar"),
             "today_gl_pct": row.get("Today_GL_Pct"),
             "last_purchase_date": get_last_purchase_date(symbol, acct, purchases),
@@ -170,7 +187,11 @@ def consolidate_options(rows: list[dict]) -> list[dict]:
     return consolidated
 
 
-def build_account_summaries(positions_df: pd.DataFrame, history_df: pd.DataFrame) -> list[dict]:
+def build_account_summaries(
+    positions_df: pd.DataFrame,
+    history_df: pd.DataFrame,
+    live_rows: list[dict] | None = None,
+) -> list[dict]:
     cats = categorize_history(history_df)
     summaries = []
     account_keys = list(TRADING_ACCOUNT_NAMES.keys()) + ["TOTAL"]
@@ -181,24 +202,42 @@ def build_account_summaries(positions_df: pd.DataFrame, history_df: pd.DataFrame
             deposits = cats["deposits"]
             withdrawals = cats["withdrawals"]
             sales = cats["sales"]
+            dividends = cats["dividends"]
+            acct_live = live_rows or []
         else:
             pos = positions_df[positions_df["Account Number"].astype(str) == acct]
-            deposits = cats["deposits"][cats["deposits"]["Account Number"].astype(str) == acct] if not cats["deposits"].empty else pd.DataFrame()
-            withdrawals = cats["withdrawals"][cats["withdrawals"]["Account Number"].astype(str) == acct] if not cats["withdrawals"].empty else pd.DataFrame()
-            sales = cats["sales"][cats["sales"]["Account Number"].astype(str) == acct] if not cats["sales"].empty else pd.DataFrame()
+            def _filter(df):
+                if df.empty:
+                    return pd.DataFrame()
+                return df[df["Account Number"].astype(str) == acct]
+            deposits = _filter(cats["deposits"])
+            withdrawals = _filter(cats["withdrawals"])
+            sales = _filter(cats["sales"])
+            dividends = _filter(cats["dividends"])
+            acct_live = [r for r in (live_rows or []) if r.get("account_number") == acct]
 
-        current_value = pos["Current Value"].sum() if "Current Value" in pos.columns and not pos.empty else 0
+        # Prefer live rows for current values; fall back to CSV
+        if acct_live:
+            current_value = sum(r.get("current_value") or 0 for r in acct_live)
+            unrealized_gl = sum(r.get("gl_dollar") or 0 for r in acct_live)
+        else:
+            current_value = pos["Current Value"].sum() if "Current Value" in pos.columns and not pos.empty else 0
+            unrealized_gl = pos["Total_GL_Dollar"].sum() if "Total_GL_Dollar" in pos.columns and not pos.empty else 0
+
         fresh_funds = deposits["Amount ($)"].sum() if not deposits.empty else 0
         cash_out = abs(withdrawals["Amount ($)"].sum()) if not withdrawals.empty else 0
         realized = sales["Amount ($)"].sum() if not sales.empty else 0
+        dividends_total = dividends["Amount ($)"].sum() if not dividends.empty else 0
 
         summaries.append({
             "account_number": acct,
             "account_label": TRADING_ACCOUNT_NAMES.get(acct, "Total"),
             "current_value": round(float(current_value), 2),
+            "unrealized_gl": round(float(unrealized_gl), 2),
             "fresh_funds_invested": round(float(fresh_funds), 2),
             "cash_taken_out": round(float(cash_out), 2),
             "realized_gains": round(float(realized), 2),
+            "dividends_received": round(float(dividends_total), 2),
         })
 
     return summaries

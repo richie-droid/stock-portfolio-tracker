@@ -1,5 +1,5 @@
 node_modules/
-backend/static/
+
 backend/data/
 backend/__pycache__/
 backend/services/__pycache__/

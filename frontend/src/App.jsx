@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { fetchDashboard, getHistoryStats } from './utils/api'
+import { fetchDashboard, getDashboard, getHistoryStats } from './utils/api'
 import UploadPanel from './components/UploadPanel'
 import AccountSummary from './components/AccountSummary'
 import StocksTable from './components/StocksTable'
@@ -8,13 +8,24 @@ import styles from './App.module.css'
 
 export default function App() {
   const [dashboard, setDashboard] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [historyStats, setHistoryStats] = useState(null)
-  const [viewMode, setViewMode] = useState('consolidated') // 'consolidated' | 'by_account'
+  const [viewMode, setViewMode] = useState('consolidated')
 
   useEffect(() => {
-    getHistoryStats().then(setHistoryStats).catch(() => {})
+    async function autoLoad() {
+      try {
+        const [data, stats] = await Promise.all([getDashboard(), getHistoryStats()])
+        if (data) setDashboard(data)
+        if (stats) setHistoryStats(stats)
+      } catch {
+        // non-fatal — user can still upload
+      } finally {
+        setLoading(false)
+      }
+    }
+    autoLoad()
   }, [])
 
   async function handleLoad(posFile) {
@@ -69,6 +80,8 @@ export default function App() {
           onLoad={handleLoad}
           historyStats={historyStats}
           loading={loading}
+          hasData={!!dashboard}
+          positionsDate={dashboard?.positions_date}
         />
 
         {error && (
@@ -80,7 +93,7 @@ export default function App() {
         {loading && (
           <div className={styles.loading}>
             <span className={styles.spinner} />
-            Loading positions & fetching market data...
+            {dashboard ? 'Refreshing positions & fetching market data...' : 'Loading portfolio...'}
           </div>
         )}
 
@@ -109,7 +122,7 @@ export default function App() {
         {!dashboard && !loading && !error && (
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>◈</div>
-            <div className={styles.emptyText}>Upload a positions file to load the dashboard</div>
+            <div className={styles.emptyText}>Upload a positions file to get started</div>
             <div className={styles.emptyHint}>
               Export from Fidelity → Accounts → Portfolio Positions → Download
             </div>

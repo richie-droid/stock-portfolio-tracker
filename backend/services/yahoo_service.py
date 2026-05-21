@@ -1,90 +1,111 @@
-import yfinance as yf
+import json
+import os
 from datetime import datetime, timedelta
-from typing import Optional
-import pandas as pd
+
+DATA_DIR = os.environ.get("DATA_DIR", "./data")
+CACHE_FILE = os.path.join(DATA_DIR, "ticker_cache.json")
+CACHE_TTL_MINUTES = 15
 
 
-def get_current_price(ticker: str) -> Optional[float]:
+def _load_cache() -> dict:
     try:
-        t = yf.Ticker(ticker)
-        info = t.fast_info
-        return round(float(info.last_price), 4)
+        with open(CACHE_FILE) as f:
+            data = json.load(f)
+        ts = datetime.fromisoformat(data.get("timestamp", "2000-01-01"))
+        if datetime.now() - ts < timedelta(minutes=CACHE_TTL_MINUTES):
+            return data.get("tickers", {})
     except Exception:
-        return None
+        pass
+    return {}
 
 
-def get_next_earnings_date(ticker: str) -> Optional[str]:
+def _save_cache(tickers_data: dict):
+    os.makedirs(DATA_DIR, exist_ok=True)
     try:
-        t = yf.Ticker(ticker)
-        cal = t.calendar
-        if cal is None:
-            return None
-        if isinstance(cal, dict):
-            ed = cal.get("Earnings Date")
-            if ed:
-                if isinstance(ed, list) and len(ed) > 0:
-                    return str(ed[0])[:10]
-                return str(ed)[:10]
-        # DataFrame format (older yfinance)
-        if hasattr(cal, "loc"):
-            try:
-                ed = cal.loc["Earnings Date"]
-                if hasattr(ed, "iloc"):
-                    return str(ed.iloc[0])[:10]
-                return str(ed)[:10]
-            except Exception:
-                pass
-        return None
+        with open(CACHE_FILE, "w") as f:
+            json.dump({"timestamp": datetime.now().isoformat(), "tickers": tickers_data}, f)
     except Exception:
-        return None
+        pass
 
 
-def get_earnings_history(ticker: str, periods: int = 6) -> list[dict]:
-    """
-    Returns last N quarterly earnings results.
-    Each item: { date, estimated_eps, actual_eps, surprise_pct, beat }
-    """
+def _empty_result() -> dict:
+    return {"current_price": None, "next_earnings_date": None, "earnings_history": []}
+
+
+def _fetch_from_yahoo(tickers: list[str]) -> dict:
+    results = {t: _empty_result() for t in tickers}
     try:
-        t = yf.Ticker(ticker)
-        eh = t.earnings_history
-        if eh is None or eh.empty:
-            return []
+        from yahooquery import Ticker
+        t_obj = Ticker(tickers, timeout=20)
 
-        eh = eh.sort_values("quarter", ascending=False).head(periods)
-        results = []
-        for _, row in eh.iterrows():
-            estimated = row.get("epsEstimate")
-            actual = row.get("epsActual")
-            surprise_pct = row.get("epsDifference")
+        # Current prices
+        try:
+            price_data = t_obj.price
+            for ticker in tickers:
+                info = price_data.get(ticker, {})
+                if isinstance(info, dict):
+                    price = info.get("regularMarketPrice")
+                    if price is not None:
+                        results[ticker]["current_price"] = round(float(price), 4)
+        except Exception:
+            pass
 
-            if pd.isna(estimated) or pd.isna(actual):
-                continue
+        # Next earnings dates
+        try:
+            calendar = t_obj.calendar_events
+            for ticker in tickers:
+                cal = calendar.get(ticker)
+                if isinstance(cal, dict):
+                    dates = cal.get("earnings", {}).get("earningsDate", [])
+                    if dates:
+                        results[ticker]["next_earnings_date"] = str(dates[0])[:10]
+        except Exception:
+            pass
 
-            beat = float(actual) >= float(estimated)
-            surprise = round(float(surprise_pct) * 100, 2) if not pd.isna(surprise_pct) else None
+        # Earnings history (last 6 quarters)
+        try:
+            earnings_map = t_obj.earnings
+            for ticker in tickers:
+                data = earnings_map.get(ticker)
+                if not isinstance(data, dict):
+                    continue
+                quarterly = data.get("earningsChart", {}).get("quarterly", [])
+                history = []
+                for item in quarterly[-6:]:
+                    actual = item.get("actual", {})
+                    estimate = item.get("estimate", {})
+                    act_val = actual.get("raw") if isinstance(actual, dict) else None
+                    est_val = estimate.get("raw") if isinstance(estimate, dict) else None
+                    if act_val is None or est_val is None:
+                        continue
+                    surprise = round((act_val - est_val) / abs(est_val) * 100, 2) if est_val else None
+                    history.append({
+                        "date": str(item.get("date", ""))[:10],
+                        "estimated_eps": round(float(est_val), 3),
+                        "actual_eps": round(float(act_val), 3),
+                        "surprise_pct": surprise,
+                        "beat": act_val >= est_val,
+                    })
+                results[ticker]["earnings_history"] = history
+        except Exception:
+            pass
 
-            results.append({
-                "date": str(row.get("quarter", ""))[:10],
-                "estimated_eps": round(float(estimated), 3),
-                "actual_eps": round(float(actual), 3),
-                "surprise_pct": surprise,
-                "beat": beat,
-            })
-        return results
     except Exception:
-        return []
+        pass
+
+    return results
 
 
 def get_ticker_info_batch(tickers: list[str]) -> dict:
-    """
-    Fetch price, next earnings date, and earnings history for a list of tickers.
-    Returns dict keyed by ticker.
-    """
-    results = {}
-    for ticker in tickers:
-        results[ticker] = {
-            "current_price": get_current_price(ticker),
-            "next_earnings_date": get_next_earnings_date(ticker),
-            "earnings_history": get_earnings_history(ticker),
-        }
-    return results
+    if not tickers:
+        return {}
+
+    cache = _load_cache()
+    missing = [t for t in tickers if t not in cache]
+
+    if missing:
+        fresh = _fetch_from_yahoo(missing)
+        cache.update(fresh)
+        _save_cache(cache)
+
+    return {t: cache.get(t, _empty_result()) for t in tickers}

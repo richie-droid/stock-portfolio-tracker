@@ -3,7 +3,7 @@ import { Upload, RefreshCw, Download, Database } from 'lucide-react'
 import { uploadHistory, exportHistoryUrl } from '../utils/api'
 import styles from './UploadPanel.module.css'
 
-export default function UploadPanel({ onLoad, historyStats, loading }) {
+export default function UploadPanel({ onLoad, historyStats, loading, hasData, positionsDate }) {
   const [posFile, setPosFile] = useState(null)
   const [histFiles, setHistFiles] = useState([])
   const [histUploading, setHistUploading] = useState(false)
@@ -29,6 +29,8 @@ export default function UploadPanel({ onLoad, historyStats, loading }) {
   function handleLoad() {
     if (!posFile) return
     onLoad(posFile)
+    setPosFile(null)
+    if (posRef.current) posRef.current.value = ''
   }
 
   return (
@@ -36,6 +38,9 @@ export default function UploadPanel({ onLoad, historyStats, loading }) {
       <div className={styles.section}>
         <div className={styles.sectionLabel}>
           <RefreshCw size={13} /> Positions
+          {hasData && positionsDate && (
+            <span className={styles.statsBadge}>last uploaded {positionsDate}</span>
+          )}
         </div>
         <div className={styles.row}>
           <input
@@ -47,14 +52,14 @@ export default function UploadPanel({ onLoad, historyStats, loading }) {
           />
           <button className={styles.fileBtn} onClick={() => posRef.current.click()}>
             <Upload size={13} />
-            {posFile ? posFile.name : 'Select Positions CSV'}
+            {posFile ? posFile.name : (hasData ? 'Select New Positions CSV' : 'Select Positions CSV')}
           </button>
           <button
             className={styles.loadBtn}
             disabled={!posFile || loading}
             onClick={handleLoad}
           >
-            {loading ? 'Loading...' : 'Load Dashboard'}
+            {loading ? 'Loading...' : (hasData ? 'Refresh Dashboard' : 'Load Dashboard')}
           </button>
         </div>
       </div>

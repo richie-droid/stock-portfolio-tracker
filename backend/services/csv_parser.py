@@ -176,7 +176,7 @@ def categorize_history(df: pd.DataFrame) -> dict:
     return {
         "purchases": df[action.str.contains("YOU BOUGHT|OPENING TRANSACTION", case=False, regex=True)],
         "sales": df[action.str.contains("YOU SOLD|CLOSING TRANSACTION", case=False, regex=True)],
-        "deposits": df[action.str.contains("ELECTRONIC FUNDS TRANSFER IN|DIRECT DEPOSIT|TRANSFERRED FROM|ROLLOVER|CONTRIBUTION", case=False, regex=True)],
+        "deposits": df[action.str.contains("ELECTRONIC FUNDS TRANSFER IN|DIRECT DEPOSIT|TRANSFERRED FROM|ROLLOVER|CONTRIBUTION|TRANSFER OF ASSETS", case=False, regex=True)],
         "withdrawals": df[action.str.contains("ELECTRONIC FUNDS TRANSFER OUT|TRANSFERRED TO|WITHDRAWAL|DISTRIBUTION", case=False, regex=True)],
         "dividends": df[action.str.contains("DIVIDEND RECEIVED", case=False, regex=True)],
     }

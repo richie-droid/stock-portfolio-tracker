@@ -2,6 +2,12 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
+export async function getDashboard() {
+  const res = await api.get('/dashboard')
+  if (res.status === 204) return null
+  return res.data
+}
+
 export async function fetchDashboard(positionsFile) {
   const form = new FormData()
   form.append('positions_file', positionsFile)
